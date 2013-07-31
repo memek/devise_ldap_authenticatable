@@ -3,11 +3,18 @@ module Devise
     class Connection
       attr_reader :ldap, :login
 
+      def ldap_available?
+        @ldap_available
+      end
+
       def initialize(params = {})
-        ldap_config = YAML.load(ERB.new(File.read(::Devise.ldap_config || "#{Rails.root}/config/ldap.yml")).result)[Rails.env]
+        #ldap_config = YAML.load(ERB.new(File.read(::Devise.ldap_config || "#{Rails.root}/config/ldap.yml")).result)[Rails.env]
+        ldap_config = ::Devise.ldap_config_builder.call
+        @ldap_available = (not ldap_config.blank?)
+        return unless @ldap_available
         ldap_options = params
-        ldap_config["ssl"] = :simple_tls if ldap_config["ssl"] === true
-        ldap_options[:encryption] = ldap_config["ssl"].to_sym if ldap_config["ssl"]
+        ldap_config["ssl"] = :simple_tls if ldap_config["ssl"].to_bool
+        ldap_options[:encryption] = ldap_config["ssl"].to_bool
 
         @ldap = Net::LDAP.new(ldap_options)
         @ldap.host = ldap_config["host"]
@@ -67,8 +74,10 @@ module Devise
       end
 
       def authenticate!
-        @ldap.auth(dn, @password)
-        @ldap.bind
+        if @ldap_available
+          @ldap.auth(dn, @password)
+          @ldap.bind
+        end
       end
 
       def authenticated?
@@ -76,7 +85,7 @@ module Devise
       end
 
       def authorized?
-        DeviseLdapAuthenticatable::Logger.send("Authorizing user #{dn}")
+        DeviseLdapAuthenticatable::Logger.send("Authorizing user #{@login}")
         if !authenticated?
           DeviseLdapAuthenticatable::Logger.send("Not authorized because not authenticated.")
           return false
