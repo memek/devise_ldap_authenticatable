@@ -22,31 +22,20 @@ module Devise
   
   # Add valid users to database
   mattr_accessor :ldap_create_user
-  @@ldap_create_user = false
-  
-  mattr_accessor :ldap_config
-  # @@ldap_config = "#{Rails.root}/config/ldap.yml"
+  @@ldap_create_user = true
+
+  mattr_accessor :ldap_use_admin_to_bind
+  @@ldap_use_admin_to_bind = false
 
   mattr_accessor :ldap_config_builder
   @@ldap_config_builder = Proc.new() {Hash.new}
-  
-  mattr_accessor :ldap_update_password
-  @@ldap_update_password = true
-  
-  mattr_accessor :ldap_check_group_membership
-  @@ldap_check_group_membership = false
-  
-  mattr_accessor :ldap_check_attributes
-  @@ldap_check_role_attribute = false
-  
-  mattr_accessor :ldap_use_admin_to_bind
-  @@ldap_use_admin_to_bind = false
+
+  mattr_accessor :ldap_user_post_create_builder
+  @@ldap_user_post_create_builder = Proc.new() {|user| user}
   
   mattr_accessor :ldap_auth_username_builder
   @@ldap_auth_username_builder = Proc.new() {|attribute, login, ldap| "#{attribute}=#{login},#{ldap.base}" }
 
-  mattr_accessor :ldap_ad_group_check
-  @@ldap_ad_group_check = false
 end
 
 # Add ldap_authenticatable strategy to defaults.
